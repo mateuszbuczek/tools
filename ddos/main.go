@@ -5,19 +5,20 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/mateuszbuczek/tools/ddos/transform"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 )
 
 func main() {
 	command := ReadFile()
 
-	fmt.Println(command)
-
 	client := GetRestClient()
-	request := GetRequest(command)
 
 	for n := 0; n <= int(command.NumberOfCalls); n++ {
+		body := GetAndTransformBody(command)
+		request := GetRequest(command, body)
 		call, err := client.Do(request)
 		if err != nil {
 			panic(err)
@@ -26,7 +27,7 @@ func main() {
 	}
 }
 
-func GetRequest(command *Request) *http.Request {
+func GetRequest(command *Request, body interface{}) *http.Request {
 	var request *http.Request
 
 	switch command.Method {
@@ -38,11 +39,10 @@ func GetRequest(command *Request) *http.Request {
 		request = req
 		break
 	case "POST":
-		jsonBytes, err := json.Marshal(command.Body)
+		jsonBytes, err := json.Marshal(body)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println(string(jsonBytes))
 		req, err := http.NewRequest(http.MethodPost, command.Url, bytes.NewReader(jsonBytes))
 		if err != nil {
 			panic(err)
@@ -55,6 +55,22 @@ func GetRequest(command *Request) *http.Request {
 	}
 
 	return request
+}
+
+func GetAndTransformBody(command *Request) interface{} {
+	jsonBytes, err := json.Marshal(command.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	reg := regexp.MustCompile("randomString\\((\\d+),(\\d+)\\)")
+	replacedJsonString := reg.ReplaceAllStringFunc(string(jsonBytes), transform.ReplaceWithRandomString)
+
+	var body interface{}
+	if err = json.Unmarshal([]byte(replacedJsonString), &body); err != nil {
+		panic(err)
+	}
+	return body
 }
 
 func GetRestClient() http.Client {

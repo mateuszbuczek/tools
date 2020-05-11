@@ -5,7 +5,7 @@ Put file 'request.json' with following structure inside folder as executable:
   "method": "GET",
   "url": "https://some.url.com",
   "body": {
-    "username": "string",
+    "username": "randomString(4,10)",
     "password": "string"
     ...
   }
@@ -13,3 +13,9 @@ Put file 'request.json' with following structure inside folder as executable:
 ```
 
 max number_of_calls = 4,294,967,296
+
+Available functions:
+
+- randomString(from,to) - generate string of size (from, to)
+ with charset "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
